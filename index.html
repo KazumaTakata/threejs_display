@@ -14,6 +14,23 @@
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/96/three.min.js"></script>
     <script src="threejs/js/controls/OrbitControls.js"></script>
+    <script src="threejs/js/loaders/GLTFLoader.js"></script>
+
+    <script src="threejs/js/shaders/CopyShader.js"></script>
+    <script src="threejs/js/shaders/DotScreenShader.js"></script>
+    <script src="threejs/js/shaders/RGBShiftShader.js"></script>
+
+    <script src="threejs/js/postprocessing/EffectComposer.js"></script>
+    <script src="threejs/js/postprocessing/RenderPass.js"></script>
+    <script src="threejs/js/postprocessing/ShaderPass.js"></script>
+
+    <script src="threejs/js/shaders/DigitalGlitch.js"></script>
+
+    <script src="threejs/js/postprocessing/RenderPass.js"></script>
+    <script src="threejs/js/postprocessing/MaskPass.js"></script>
+    <script src="threejs/js/postprocessing/ShaderPass.js"></script>
+    <script src="threejs/js/postprocessing/GlitchPass.js"></script>
+
 </head>
 
 
@@ -24,14 +41,16 @@
         var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         var controls = new THREE.OrbitControls(camera);
 
+
+        var loader = new THREE.GLTFLoader();
         controls.update();
 
         var renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        var geometry = new THREE.CylinderGeometry(5, 5, 20, 32);
-        var material = new THREE.MeshStandardMaterial({ color: 0x6699FF, roughness: 1 });
+        var geometry = new THREE.CylinderGeometry(5, 5, 20, 8);
+        var material = new THREE.MeshStandardMaterial({ color: 0x445555, roughness: 0 });
         var cylinder = new THREE.Mesh(geometry, material);
         cylinder.position.y = -10
 
@@ -40,28 +59,62 @@
         var light = new THREE.AmbientLight(0x404040, 3); // soft white light
         scene.add(light);
 
-        var geometry = new THREE.BoxGeometry(1, 1, 1);
-        var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-        var cube = new THREE.Mesh(geometry, material);
-        cube.position.y = 1
-        scene.add(cube)
+        // var geometry = new THREE.BoxGeometry(1, 1, 1);
+        // var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        // var cube = new THREE.Mesh(geometry, material);
+        // cube.position.y = 1
+        // scene.add(cube)
 
-        var light2 = new THREE.PointLight(0xffffff, 2, 100);
+        var light2 = new THREE.PointLight(0xffffff, .5, 100);
         light2.position.set(4, 10, 4);
         scene.add(light2)
 
-        var light3 = new THREE.PointLight(0xff4fff, 1, 100);
-        light3.position.set(-4, 10, -4);
+        var light3 = new THREE.PointLight(0xffffff, 1, 100);
+        light3.position.set(-14, 1, -14);
         scene.add(light3)
 
         camera.position.z = 15;
         camera.position.y = 10
 
+        loader.load(
+            // resource URL
+            "model/giraffe.gltf",
+            // called when the resource is loaded
+            function (gltf) {
+                scene.add(gltf.scene);
+                gltf.scene.position.x = 0;
+                gltf.scene.position.z = 0;
+                gltf.scene.position.y = 3;
+                gltf.scene.scale.set(0.5, 0.5, 0.5)
+            },
+            function (xhr) {
+                console.log(xhr.loaded / xhr.total * 100 + "% loaded");
+            },
+            // called when loading has errors
+            function (error) {
+                console.log("An error happened");
+            }
+        );
+
+        composer = new THREE.EffectComposer(renderer);
+        composer.addPass(new THREE.RenderPass(scene, camera));
+        // var effect = new THREE.ShaderPass(THREE.DotScreenShader);
+        // effect.uniforms['scale'].value = 4;
+        // composer.addPass(effect);
+        // var effect = new THREE.ShaderPass(THREE.RGBShiftShader);
+        // effect.uniforms['amount'].value = 0.015;
+        // effect.renderToScreen = true;
+        // composer.addPass(effect);
+
+        glitchPass = new THREE.GlitchPass();
+        glitchPass.renderToScreen = true;
+        composer.addPass(glitchPass);
+
         var animate = function () {
             requestAnimationFrame(animate);
             controls.update();
 
-            renderer.render(scene, camera);
+            composer.render();
         };
 
         animate();
